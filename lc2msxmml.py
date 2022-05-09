@@ -53,7 +53,7 @@ def main():
     if os.path.isfile(lcfile) and not os.path.isdir(args.basfile):
         start = args.start if args.start else 10
         step = args.step if args.step else 10
-        notelen = args.notelen if args.step else 32
+        notelen = args.notelen if args.notelen else 32
 
         with open(args.basfile, 'w', encoding='ascii') as f_out:
             mb = lu.basic()

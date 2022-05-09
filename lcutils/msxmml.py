@@ -23,7 +23,7 @@ class MMLVALS(Enum):
     Args:
         SCALES (tuple[int]): Scale macro
         REST (str): Rest macro
-        REST (str): Octave macro
+        OCTAVE (str): Octave macro
         NUMSCALE (int): The number of single octave
     """
     SCALES = ('C','C+','D','D+','E','F','F+','G','G+','A','A+','B','')
@@ -39,7 +39,7 @@ class LCVALS(Enum):
         MAXNUM (int): Maximum note scale number
         NOISEID (tuple[int]): Noise tone IDs
     """
-    MINNUM = 23
+    MINNUM = 24
     MAXNUM = 107
     NOISEID = (3, 7, 15, 33)
 
@@ -145,7 +145,7 @@ class basic:
 
                 for n in range(bar.play_notes):
                     note = pd.Series(notes[n])
-                    if note.__LCVoice__ == True:
+                    if note.__LCVoice__:
                         barstr.append(self.num2macro(note.n))
 
                         #Evaluate single note for mixing register one by one as auto detection
@@ -160,7 +160,7 @@ class basic:
                             barstrs.append(''.join(barstr))
                             barstr.clear()
 
-                if(len(barstr) > 0):
+                if len(barstr) > 0:
                     barstrs.append(''.join(barstr))
                     barstr.clear()
 
