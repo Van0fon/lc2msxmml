@@ -31,6 +31,7 @@ You can use .exe windows OS binary.
 - オクターブ検出ミスを修正
 - R0.5のリリースノートを更新
 - msxmml.pyの動作に影響しない記述形式を微修正
+  
 ## R0.5
 - It does not support application of tone.
 - Assign note scale to MSX mml O1-O7 (O8 is not used).
