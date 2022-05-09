@@ -26,7 +26,7 @@ You can use .exe windows OS binary.
 - Fixed miss octave detection.
 - Updated R0.5 release note.
 - Modified a couple of syntaxes in msxmml.py  
-<BR>
+  <BR>
 - --stepオプションを仕様した場合の誤作動を修正
 - オクターブ検出ミスを修正
 - R0.5のリリースノートを更新
