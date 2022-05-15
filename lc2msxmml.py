@@ -58,8 +58,8 @@ def main():
 
     if not os.path.isfile(lcfile):
         print('Invalid LovelyComposer file name given as {0}.'.format(lcfile))
-    elif not os.path.isdir(args.basfile):
-        print('The MSX bas file given as {0}. is directory'.format(lcfile))
+    elif os.path.isdir(args.basfile):
+        print('The MSX bas file given as {0}. is directory'.format(args.basfile))
     else:
         with open(args.basfile, 'w', encoding='ascii') as f_out:
             mb = lu.basic()

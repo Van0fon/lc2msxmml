@@ -244,7 +244,7 @@ class basic:
             self.mml.append('{0} _MUSIC\n'.format(row))
             row += self._step
         self.mml.append('{0} SOUND7,&B{1}\n'.format(row, format(self._mixer, '06b')))
-        line += self._step
+        row += self._step
         play = 'PLAY#0,' if self._extend else 'PLAY'
         self.mml.append('{0} {1}\"T{2}V{3}L{4}\",\"T{2}V{3}L{4}\",\"T{2}V{3}L{4}\"\n'.format( \
             row, play, self._tempo, self._volume, self._notelen))
