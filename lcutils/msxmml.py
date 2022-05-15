@@ -14,6 +14,7 @@
     * Note coupling functionality (to be considered)
 """
 
+from tkinter.tix import MAX
 import pandas as pd
 from enum import Enum
 
@@ -50,20 +51,24 @@ class MSXVALS(Enum):
         SMASK (int): Register mask for sound
         NMASK (int): Register mask for noise
         ALLMASK (int): Whole mixer register mask
+        LINENOTES (int): Number of notes in single line per one channel
+        CHANNELS (int): Capable channels, intended for PSG
         DEFLINE (int): Default number of start line
         DEFSTEP (int): Default number of line step
         DEFLEN (int): Default note length
-        LINENOTES (int): Number of notes in single line per one channel
-        CHANNELS (int): Capable channels, intended for PSG
+        DEFTEMPO (int): Default tempo
+        DEFVOLUME (int): Default volume
     """
     SMASK = 0b000001
     NMASK = 0b001000
     ALLMASK = 0b111111
-    DEFLINE = 10
-    DEFSTEP = 10
-    DEFLEN = 32
     LINENOTES = 8
     CHANNELS = 3
+    DEFLINE = 10
+    DEFSTEP = 10
+    DEFLEN = 16
+    DEFTEMPO = 140
+    DEFVOLUME = 12
 
 class basic:
     """Conversion features for MSX basic mml
@@ -84,6 +89,9 @@ class basic:
         self._step = MSXVALS.DEFSTEP.value
         self._mixer = MSXVALS.ALLMASK.value
         self._notelen = MSXVALS.DEFLEN.value
+        self._tempo = MSXVALS.DEFTEMPO.value
+        self._volume = MSXVALS.DEFVOLUME.value
+        self._extend = False
     
     def clear(self):
         """Set all members to default
@@ -94,6 +102,9 @@ class basic:
         self._step = MSXVALS.DEFSTEP.value
         self._mixer = MSXVALS.ALLMASK.value
         self._notelen = MSXVALS.DEFLEN.value
+        self._tempo = MSXVALS.DEFTEMPO.value
+        self._volume = MSXVALS.DEFVOLUME.value
+        self._extend = False
 
     def num2macro(self, num):
         """Conversion from LC num item to MML notation macro
@@ -102,17 +113,20 @@ class basic:
             num (int): LovelyComposer 'n' item
 
         Returns:
-            str: single note either sound or noise
+            tuple[str]: macro[octave or rest], value[note length or octave level] and scale char(s)
         """
-        sym = MMLVALS.REST.value
-        oct = str(self._notelen)
-        scl = MMLVALS.NUMSCALE.value
+        macro = MMLVALS.REST.value
+        value = str(self._notelen)
+        index = MMLVALS.NUMSCALE.value
+
         if type(num) == int:
             if num <= LCVALS.MAXNUM.value:
-                sym = MMLVALS.OCTAVE.value
-                oct = str(int((num - LCVALS.MINNUM.value)/MMLVALS.NUMSCALE.value)+1)
-                scl = (num-MMLVALS.NUMSCALE.value)%MMLVALS.NUMSCALE.value
-        return '{0}{1}{2}'.format(sym, oct, MMLVALS.SCALES.value[scl])
+                value = str(int((num - LCVALS.MINNUM.value)/MMLVALS.NUMSCALE.value)+1)
+                macro = MMLVALS.OCTAVE.value
+                index = (num-MMLVALS.NUMSCALE.value)%MMLVALS.NUMSCALE.value
+        scale = MMLVALS.SCALES.value[index]
+
+        return macro, value, scale
 
     def lc2mml(self, lcfile):
         """Core function converting LovelyComposer file to MSX MML list by the channel sort
@@ -137,6 +151,7 @@ class basic:
             soundlist = pd.Series(channels[c])
             bars = pd.Series(soundlist.sl)
             barstrs = []
+            comparison = ''
 
             for b in range(len(bars)):
                 bar = pd.Series(bars[b])
@@ -146,7 +161,17 @@ class basic:
                 for n in range(bar.play_notes):
                     note = pd.Series(notes[n])
                     if note.__LCVoice__:
-                        barstr.append(self.num2macro(note.n))
+                        macro, value, scale = self.num2macro(note.n)
+
+                        #Secure last octave level to save octave macro usage
+                        if macro == MMLVALS.OCTAVE.value:
+                            if value == comparison:
+                                macro = ''
+                                value = ''
+                            else:
+                                comparison = value
+
+                        barstr.append('{0}{1}{2}'.format(macro, value, scale))
 
                         #Evaluate single note for mixing register one by one as auto detection
                         if note.id != None:
@@ -168,42 +193,70 @@ class basic:
             nmask <<= 1
 
             self.notes.append(barstrs)
-        
-    def generate(self, lcfile, startline, step, notelen):
-        """The series of conversion
 
-            * Call conversion core function.
-            * 'SOUND' for mixing, 'PLAY' syntaxes and line numbers are added.
-            * Volume is fixed by V15 for all channels.
+    def configure(self, \
+        start: int=MSXVALS.DEFLINE.value, \
+        step: int=MSXVALS.DEFSTEP.value, \
+        notelen: int=MSXVALS.DEFLEN.value, \
+        tempo: int=MSXVALS.DEFTEMPO.value, \
+        volume: int=MSXVALS.DEFVOLUME.value, \
+        extend: bool=False):
+        """Configure conversion parameters
+
+            * Unless call either clear() or configure() method these parameters shall be maintained.
 
         Args:
-            lcfile (str): The path of LovelyComposer source file
             start (int): Start line number for MSX basic list
             step (int): Steps of line interval for MSX basic list
             notelen (int): Designated basic note length in MSX music macro language
+            tempo (int): Designated tempo in MSX music macro language
+            volume (int): Designated volume for all channel in MSX music macro language
+            extend (bool): Use exnteded basic for play syntax
 
         Returns:
             list[str]: Entire playable MSX mml as the conversion result
         """
-        self._line = startline
+        self._line = start
         self._step = step
         self._notelen = notelen
+        self._tempo = tempo
+        self._volume = volume
+        self._extend = extend
 
+    def generate(self, lcfile):
+        """The series of conversion
+
+            * Call conversion core function.
+            * 'SOUND' for mixing, 'PLAY' syntaxes and line numbers are added.
+
+        Args:
+            lcfile (str): The path of LovelyComposer source file
+
+        Returns:
+            list[str]: Entire playable MSX mml as the conversion result
+        """
         self.lc2mml(lcfile)
 
+        row = self._line
+
         #Append initial settings
-        self.mml.append('{0} SOUND7,&B{1}\n'.format(self._line, format(self._mixer, '06b')))
-        self._line += self._step
-        self.mml.append('{0} PLAY\"V15L{1}\",\"V15L{1}\",\"V15L{1}\"\n'.format(self._line, MSXVALS.DEFLEN.value))
-        self._line += self._step
+        if self._extend:
+            self.mml.append('{0} _MUSIC\n'.format(row))
+            row += self._step
+        self.mml.append('{0} SOUND7,&B{1}\n'.format(row, format(self._mixer, '06b')))
+        line += self._step
+        play = 'PLAY#0,' if self._extend else 'PLAY'
+        self.mml.append('{0} {1}\"T{2}V{3}L{4}\",\"T{2}V{3}L{4}\",\"T{2}V{3}L{4}\"\n'.format( \
+            row, play, self._tempo, self._volume, self._notelen))
+        row += self._step
 
         #Append actual notes by sorting 1 bar from the list of 3 channels
         _line = []
         for n in range(len(self.notes[0])):
             for m in range(MSXVALS.CHANNELS.value):
                 _line.append('\"{0}\"'.format(self.notes[m][n]))
-            self.mml.append('{0} PLAY{1}\n'.format(self._line, ','.join(_line)))
+            self.mml.append('{0} {1}{2}\n'.format(row, play, ','.join(_line)))
             _line.clear()
-            self._line += self._step
-    
+            row += self._step
+
         return self.mml

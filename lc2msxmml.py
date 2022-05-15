@@ -7,13 +7,13 @@
 
    Todo:
     * GUI front end
-    * Tempo option
 """
 
 import os
 import sys
 import argparse
 import lcutils as lu
+from lcutils import MSXVALS as mv
 
 def main():
     """Main function for console command
@@ -28,6 +28,9 @@ def main():
             start (int): Start line number for MSX basic list
             step (int): Steps of line interval for MSX basic list
             notelen (int): Designated basic note length in MSX music macro language
+            tempo (int): Designated tempo in MSX music macro language
+            volume (int): Designated volume for all channel in MSX music macro language
+            extend (bool): Use exnteded basic for play syntax
 
         Examples:
             python lc2msxmml.py --start 10 --step 10 --notelen 32 01.jsonl music01.bas
@@ -42,27 +45,34 @@ def main():
     if sys.stdin.isatty():
         ap.add_argument('lcfile', help='set LovelyComposer music file name', type=str)
     ap.add_argument('basfile', help='set target file name', type=str)
-    ap.add_argument('--start', help='set start line number for target file', type=int)
-    ap.add_argument('--step', help='set number of line steps for target file', type=int)
-    ap.add_argument('--notelen', help='set number of note length for target file (1-64: default[32])', type=int)
+    ap.add_argument('-s','--start', help='set start line number for target file (1-: default[{0}])'.format(mv.DEFLINE.value), type=int)
+    ap.add_argument('-p','--step', help='set number of line steps for target file (1-: default[{0}])'.format(mv.DEFSTEP.value), type=int)
+    ap.add_argument('-l','--notelen', help='set number of note length for target file (1-64: default[{0}])'.format(mv.DEFLEN.value), type=int)
+    ap.add_argument('-t','--tempo', help='set mml tempo (32-255: default[{0}])'.format(mv.DEFTEMPO.value), type=int)
+    ap.add_argument('-v','--volume', help='set mml volume (0-15: default[{0}])'.format(mv.DEFVOLUME.value), type=int)
+    ap.add_argument('-e','--extend', help='use extended basic', action='store_true')
 
     args = ap.parse_args()
 
     lcfile = args.lcfile if hasattr(args, 'lcfile') else input().strip()
 
-    if os.path.isfile(lcfile) and not os.path.isdir(args.basfile):
-        start = args.start if args.start else 10
-        step = args.step if args.step else 10
-        notelen = args.notelen if args.notelen else 32
-
+    if not os.path.isfile(lcfile):
+        print('Invalid LovelyComposer file name given as {0}.'.format(lcfile))
+    elif not os.path.isdir(args.basfile):
+        print('The MSX bas file given as {0}. is directory'.format(lcfile))
+    else:
         with open(args.basfile, 'w', encoding='ascii') as f_out:
             mb = lu.basic()
-            song = mb.generate(lcfile, start, step, notelen)
+            mb.configure(start = args.start if args.start else mv.DEFLINE.value, \
+                step = args.step if args.step else mv.DEFSTEP.value, \
+                notelen = args.notelen if args.notelen else mv.DEFLEN.value, \
+                tempo = args.tempo if args.tempo else mv.DEFTEMPO.value, \
+                volume = args.volume if args.volume else mv.DEFVOLUME.value, \
+                extend = args.extend)
+            song = mb.generate(lcfile)
 
             for mml in song:
                 f_out.write(mml)
-    else:
-        print('Invalid LovelyComposer file name given as {0}.'.format(lcfile))
 
 if __name__ == '__main__':
     main()
