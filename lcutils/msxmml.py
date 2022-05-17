@@ -14,7 +14,6 @@
     * Note coupling functionality (to be considered)
 """
 
-from tkinter.tix import MAX
 import pandas as pd
 from enum import Enum
 
@@ -70,7 +69,7 @@ class MSXVALS(Enum):
     DEFTEMPO = 140
     DEFVOLUME = 12
 
-class basic:
+class Basic:
     """Conversion features for MSX basic mml
 
         Constraints
