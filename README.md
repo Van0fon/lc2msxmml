@@ -42,6 +42,15 @@ You can use .exe windows OS binary.
 - 各符号を結合する機能（検討中）
 
 # Release notes
+## R0.5.4
+- Fixed storing modified MMLs at the input form
+- Added the result display for button actions
+- Deleted empty terminal window  
+  <BR>
+- MML表示フォームで編集した内容が保存されるよう修正
+- 各種ボタン押下後の結果の表示を追加
+- 空のコマンドターミナルを削除
+
 ## R0.5.3
 - Added GUI frontend
 - Streamlined __init__ file  

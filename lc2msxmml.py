@@ -25,8 +25,6 @@ import dearpygui.dearpygui as dpg
 from lcutils import Basic
 from lcutils import MSXVALS as mv
 
-song = []
-
 def jsonl_callback(sender, app_data):
     """Callback function serving for jsonl selector
 
@@ -42,6 +40,7 @@ def jsonl_callback(sender, app_data):
         dpg.configure_item('convert', enabled=True)
     else:
         dpg.configure_item('convert', enabled=False)
+    dpg.set_value('result', 'Opened {0}'.format(app_data['file_name']))
 
 
 def gen_callback(sender, app_data):
@@ -54,7 +53,6 @@ def gen_callback(sender, app_data):
     Returns:
         None
     """
-    global song
     mb = Basic()
     mb.configure(start = dpg.get_value('startline'), \
         step = dpg.get_value('step'), \
@@ -64,6 +62,7 @@ def gen_callback(sender, app_data):
         extend = dpg.get_value('extend'))
     song = mb.generate(dpg.get_value('jsonl'))
     dpg.set_value('status', ''.join(song))
+    dpg.set_value('result', 'Conversion finished')
 
 
 def bas_callback(sender, app_data):
@@ -76,32 +75,54 @@ def bas_callback(sender, app_data):
     Returns:
         None
     """
-    global song
     if not os.path.isdir(app_data['file_path_name']):
         dpg.set_value('bas', app_data['file_path_name'])
+        song =  dpg.get_value('status').strip()
         with open(app_data['file_path_name'], 'w', encoding='ascii') as f_out:
+            f_out.write(song)
+            dpg.set_value('result', 'Saved {0}'.format(app_data['file_name']))
+
+
+if sys.stdin != None:
+
+    ap = argparse.ArgumentParser()
+
+    if sys.stdin.isatty():
+        ap.add_argument('lcfile', nargs='?', default='', help='set LovelyComposer music file name', type=str)
+    ap.add_argument('basfile', nargs='?', default='', help='set target file name', type=str)
+    ap.add_argument('-s','--start', help='set start line number for target file (1-: default[{0}])'.format(mv.DEFLINE.value), type=int)
+    ap.add_argument('-p','--step', help='set number of line steps for target file (1-: default[{0}])'.format(mv.DEFSTEP.value), type=int)
+    ap.add_argument('-l','--notelen', help='set number of note length for target file (1-64: default[{0}])'.format(mv.DEFLEN.value), type=int)
+    ap.add_argument('-t','--tempo', help='set mml tempo (32-255: default[{0}])'.format(mv.DEFTEMPO.value), type=int)
+    ap.add_argument('-v','--volume', help='set mml volume (0-15: default[{0}])'.format(mv.DEFVOLUME.value), type=int)
+    ap.add_argument('-e','--extend', help='use extended basic', action='store_true')
+
+    args = ap.parse_args()
+
+    lcfile = args.lcfile if hasattr(args, 'lcfile') else input().strip()
+    basfile = args.basfile
+
+    if not os.path.isfile(lcfile):
+        print('Invalid LovelyComposer file name given as {0}.'.format(lcfile))
+    elif basfile == '':
+        print('The MSX bas file given as empty')
+    elif os.path.isdir(args.basfile):
+        print('The MSX bas file given as {0}. is directory'.format(args.basfile))
+    else:
+        with open(args.basfile, 'w', encoding='ascii') as f_out:
+            mb = Basic()
+            mb.configure(start = args.start if args.start else mv.DEFLINE.value, \
+                step = args.step if args.step else mv.DEFSTEP.value, \
+                notelen = args.notelen if args.notelen else mv.DEFLEN.value, \
+                tempo = args.tempo if args.tempo else mv.DEFTEMPO.value, \
+                volume = args.volume if args.volume else mv.DEFVOLUME.value, \
+                extend = args.extend)
+            song = mb.generate(lcfile)
+
             for mml in song:
                 f_out.write(mml)
 
-
-ap = argparse.ArgumentParser()
-
-if sys.stdin.isatty():
-    ap.add_argument('lcfile', nargs='?', default='', help='set LovelyComposer music file name', type=str)
-ap.add_argument('basfile', nargs='?', default='', help='set target file name', type=str)
-ap.add_argument('-s','--start', help='set start line number for target file (1-: default[{0}])'.format(mv.DEFLINE.value), type=int)
-ap.add_argument('-p','--step', help='set number of line steps for target file (1-: default[{0}])'.format(mv.DEFSTEP.value), type=int)
-ap.add_argument('-l','--notelen', help='set number of note length for target file (1-64: default[{0}])'.format(mv.DEFLEN.value), type=int)
-ap.add_argument('-t','--tempo', help='set mml tempo (32-255: default[{0}])'.format(mv.DEFTEMPO.value), type=int)
-ap.add_argument('-v','--volume', help='set mml volume (0-15: default[{0}])'.format(mv.DEFVOLUME.value), type=int)
-ap.add_argument('-e','--extend', help='use extended basic', action='store_true')
-
-args = ap.parse_args()
-
-lcfile = args.lcfile if hasattr(args, 'lcfile') else input().strip()
-basfile = args.basfile
-
-if lcfile == '':
+else:
 
     dpg.create_context()
     dpg.create_viewport(title='lc2msxmml', width=800, height=600)
@@ -171,6 +192,7 @@ if lcfile == '':
                         min_value=0, min_clamped=True, max_value=15, max_clamped=True)
                     dpg.add_checkbox(label=' Use extended BASIC PLAY', tag='extend')
                     dpg.add_button(enabled=False, label="CONVERT", callback=gen_callback, width = 150, height = 20, tag='convert')
+                    dpg.add_text('', tag='result', color=[255, 160, 60])
                     dpg.add_loading_indicator(show=False, tag='indicator', color=[200,0,200,255], secondary_color=[30,200,200,100])
                 dpg.add_input_text(tag='status', multiline=True, tracked=True, width=540, height=465)
             with dpg.child_window(width=770, height=36):
@@ -184,24 +206,3 @@ if lcfile == '':
     dpg.set_primary_window('primary', True)
     dpg.start_dearpygui()
     dpg.destroy_context()
-
-else:
-    if not os.path.isfile(lcfile):
-        print('Invalid LovelyComposer file name given as {0}.'.format(lcfile))
-    elif basfile == '':
-        print('The MSX bas file given as empty')
-    elif os.path.isdir(args.basfile):
-        print('The MSX bas file given as {0}. is directory'.format(args.basfile))
-    else:
-        with open(args.basfile, 'w', encoding='ascii') as f_out:
-            mb = Basic()
-            mb.configure(start = args.start if args.start else mv.DEFLINE.value, \
-                step = args.step if args.step else mv.DEFSTEP.value, \
-                notelen = args.notelen if args.notelen else mv.DEFLEN.value, \
-                tempo = args.tempo if args.tempo else mv.DEFTEMPO.value, \
-                volume = args.volume if args.volume else mv.DEFVOLUME.value, \
-                extend = args.extend)
-            song = mb.generate(lcfile)
-
-            for mml in song:
-                f_out.write(mml)
