@@ -8,7 +8,7 @@ Currently still under the draft status.
 But you can convert LC jsonl to .bas file by somewhat simple level.  
 You can use .exe windows OS binary.
   
-[built bin for windows (R0.5.3)](https://drive.google.com/file/d/1zox4-CWEIF4brYUqrazgz3kA8auTVskB/view?usp=sharing "lc2msxmml")
+[built bin for windows (R0.5.4)](https://drive.google.com/file/d/1zox4-CWEIF4brYUqrazgz3kA8auTVskB/view?usp=sharing "lc2msxmml")
   
 ラビコン jsonl から MSX basic music macro 言語への変換スクリプトです。  
 現在はまだドラフトの状態です。  
