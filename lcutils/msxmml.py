@@ -131,6 +131,7 @@ class Basic:
         Args:
             lcfile (str): The path of LovelyComposer source file
         """
+        self.lcsong.clear()
         with open (lcfile, 'r', encoding='utf-8') as f:
             #Ignore first line because of LC file header
             f.readline()
@@ -205,6 +206,8 @@ class Basic:
         if any(lcsong):
             self.lcsong = lcsong
 
+        self.notes.clear()
+
         smask = MSXVALS.SMASK.value
         nmask = MSXVALS.NMASK.value
 
@@ -268,6 +271,8 @@ class Basic:
         Returns:
             list[str]: Entire playable MSX mml as the conversion result
         """
+        self.mml.clear()
+
         self.lc2mml()
 
         row = self._line
