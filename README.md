@@ -8,7 +8,7 @@ Currently still under the draft status.
 But you can convert LC jsonl to .bas file by somewhat simple level.  
 You can use .exe windows OS binary.
   
-[built bin for windows (R0.5.4)](https://drive.google.com/file/d/1zox4-CWEIF4brYUqrazgz3kA8auTVskB/view?usp=sharing "lc2msxmml")
+[built bin for windows (R0.5.5)](https://drive.google.com/file/d/1eaoP3yoGd1FLMC1KrGSUiqnVaDOJ-yAc/view?usp=sharing "lc2msxmml")
   
 ラビコン jsonl から MSX basic music macro 言語への変換スクリプトです。  
 現在はまだドラフトの状態です。  
@@ -19,13 +19,12 @@ You can use .exe windows OS binary.
 - From console
   - python lc2msxmml.py --start 10 --step 10 --notelen 32 .\01.jsonl music01.bas
   - echo .\02.jsonl | python .\lc2msxmml.py music02.bas
-  - lc2msxmml.exe -s 10 -p 10 -l 32 -t 100 -v 14 -e .\01.jsonl music01.bas
+  - lc2msxmml.exe -s 10 -p 10 -l 32 -t 100 -v 14 -e -n .\01.jsonl music01.bas
   - See usage detail by python .\lc2msxmml.py -h
 - By GUI
   - python lc2msxmml.py
 
 # TODO
-- Direct converstion to 'N' MML macro
 - MGS file type conversion
 - Extended MSX basic (MSX-MUSIC) mml
 - Reverse converter from MSX basic mml to LovelyComposer jsonl
@@ -33,7 +32,6 @@ You can use .exe windows OS binary.
 - Simple tone reflection functionality in case of MGS/ext-basic mml
 - Note coupling functionality (to be considered)  
   <BR>
-- 'N' マクロ直指定変換
 - MGSファイル対応
 - MSX-MUSIC 拡張BASIC対応
 - MSX mml からラビコンへの逆変換
@@ -42,6 +40,15 @@ You can use .exe windows OS binary.
 - 各符号を結合する機能（検討中）
 
 # Release notes
+## R0.5.5
+- Supported 'N' macro output
+- Changed library for analysis from pandas to json embedded-lib
+- Due to library change it reduced binary size and shorten loading time  
+  <BR>
+- 'N' マクロによる出力に対応
+- MML解析に使用するライブラリをpandasから組込みjsonに変更
+- ライブラリ変更に伴いバイナリサイズ削減と起動時間短縮
+
 ## R0.5.4
 - Fixed storing modified MMLs at the input form
 - Added the result display for button actions
@@ -94,7 +101,7 @@ You can use .exe windows OS binary.
   <BR>
 - 音色の変換には対応していない
 - ラビコンの元の音階をMSX MMLでの O1-O7として変換する（O8に乗らない）
-  - これはMSXが８段階の一方でラビコンでは７オクターブを採ることと、著者の聴感に寄る（独断）
+  - これはMSXが８段階の一方でラビコンでは７オクターブを採ることと、著者の聴感に依る（独断）
 - 全チャンネルの音量はV15で固定
 - 連続した同音色同音階の符の結合は行わない
   - これはある意味でラビコンの仕様を反映したものと言えるため（検討中）
